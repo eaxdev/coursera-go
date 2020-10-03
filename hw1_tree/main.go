@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func main() {
@@ -19,4 +18,36 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+}
+
+func dirTree(out io.Writer, path string, needPrintFiles bool) error {
+
+	if needPrintFiles {
+		err := printFiles(out, path)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := printDirectories(out, path)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func printDirectories(out io.Writer, path string) error {
+	e := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		fmt.Println(info.Name())
+		return nil
+	})
+	if e != nil {
+		return e
+	}
+	return nil
+}
+
+func printFiles(out io.Writer, path string) error {
+	return nil
 }
