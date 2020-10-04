@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -20,15 +19,14 @@ func main() {
 	}
 }
 
-func dirTree(out io.Writer, path string, needPrintFiles bool) error {
-
+func dirTree(out io.Writer, rootPath string, needPrintFiles bool) error {
 	if needPrintFiles {
-		err := printFiles(out, path)
+		err := printFiles(out, rootPath)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := printDirectories(out, path)
+		err := printDirectories(out, rootPath)
 		if err != nil {
 			return err
 		}
@@ -38,16 +36,44 @@ func dirTree(out io.Writer, path string, needPrintFiles bool) error {
 }
 
 func printDirectories(out io.Writer, path string) error {
-	e := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		fmt.Println(info.Name())
-		return nil
-	})
-	if e != nil {
-		return e
+	//fmt.Println(path)
+	open, err := os.Open(path)
+	if err != nil {
+		return err
 	}
+	files, err := open.Readdir(-1)
+
+	directories := Filter(files, func(file os.FileInfo) bool {
+		return file.IsDir()
+	})
+
+	for index, file := range directories {
+		if index == len(directories) -1 {
+			out.Write([]byte("└───"))
+		} else {
+			out.Write([]byte("├───"))
+		}
+		out.Write([]byte(file.Name()))
+		out.Write([]byte("\n"))
+		printDirectories(out, filepath.Join(path, file.Name()))
+	}
+
+	//if e != nil {
+	//	return e
+	//}
 	return nil
 }
 
 func printFiles(out io.Writer, path string) error {
 	return nil
+}
+
+func Filter(files []os.FileInfo, predicate func(os.FileInfo) bool) []os.FileInfo {
+	var result []os.FileInfo
+	for _, file := range files {
+		if predicate(file) {
+			result = append(result, file)
+		}
+	}
+	return result
 }
